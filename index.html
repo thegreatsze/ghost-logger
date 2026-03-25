@@ -1,0 +1,1428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ghost Logger — Silent Time Tracking for Legal Professionals</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Press+Start+2P&display=swap" rel="stylesheet" />
+  <style>
+    /* ─── Catppuccin Mocha Variables ─────────────────────────────────────── */
+    :root {
+      --bg:           #1e1e2e;
+      --surface:      #313244;
+      --surface2:     #45475a;
+      --overlay:      #6c7086;
+      --subtext:      #a6adc8;
+      --text:         #cdd6f4;
+      --blue:         #89b4fa;
+      --green:        #a6e3a1;
+      --yellow:       #f9e2af;
+      --red:          #f38ba8;
+      --maroon:       #8B1A2E;
+      --maroon-hover: #a32235;
+    }
+
+    /* ─── Reset & Base ───────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    a { color: var(--blue); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ─── Ghost SVG Shared ───────────────────────────────────────────────── */
+    .ghost-svg { display: block; }
+
+    /* ─── Nav ────────────────────────────────────────────────────────────── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 32px;
+      background: rgba(30, 30, 46, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(69, 71, 90, 0.5);
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 600;
+      font-size: 1rem;
+      color: var(--text);
+      text-decoration: none;
+    }
+    .nav-brand:hover { text-decoration: none; }
+    .nav-brand svg { width: 32px; height: auto; }
+
+    .nav-links {
+      display: flex;
+      gap: 28px;
+      list-style: none;
+    }
+    .nav-links a {
+      color: var(--subtext);
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--text); text-decoration: none; }
+
+    .nav-right { display: flex; align-items: center; gap: 12px; }
+
+    .btn-github {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border: 1px solid var(--surface2);
+      border-radius: 8px;
+      color: var(--subtext);
+      font-size: 0.85rem;
+      font-weight: 500;
+      background: var(--surface);
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s, border-color 0.2s;
+    }
+    .btn-github:hover {
+      background: var(--surface2);
+      color: var(--text);
+      border-color: var(--blue);
+      text-decoration: none;
+    }
+    .btn-github svg { width: 18px; height: 18px; fill: currentColor; }
+
+    /* ─── Hero ───────────────────────────────────────────────────────────── */
+    #hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 100px 24px 60px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 60% 50% at 50% 40%, rgba(137, 180, 250, 0.08) 0%, transparent 70%),
+        radial-gradient(ellipse 80% 60% at 50% 100%, rgba(137, 180, 250, 0.04) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .hero-ghost-wrap {
+      position: relative;
+      width: 100px;
+      height: auto;
+      margin-bottom: 28px;
+      animation: ghostFloat 3s ease-in-out infinite;
+    }
+
+    .hero-ghost-wrap::before {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 160px;
+      height: 160px;
+      background: radial-gradient(circle, rgba(137, 180, 250, 0.22) 0%, transparent 70%);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .hero-ghost-wrap svg { width: 100px; height: auto; }
+
+    @keyframes ghostFloat {
+      0%   { transform: translateY(0); }
+      50%  { transform: translateY(-12px); }
+      100% { transform: translateY(0); }
+    }
+
+    /* Blink animation on hero ghost eyes */
+    .hero-eyeblink ellipse[fill="#141428"] {
+      transform-origin: center;
+    }
+    .hero-eyeblink {
+      animation: eyeBlink 4s ease-in-out infinite;
+    }
+    @keyframes eyeBlink {
+      0%, 90%, 100% { transform: scaleY(1); }
+      94%            { transform: scaleY(0.05); }
+    }
+
+    #hero h1 {
+      font-family: 'Press Start 2P', monospace;
+      font-size: clamp(1.4rem, 4vw, 2.4rem);
+      color: var(--text);
+      margin-bottom: 20px;
+      letter-spacing: 0.02em;
+      line-height: 1.4;
+    }
+
+    .hero-tagline {
+      font-size: clamp(1rem, 2.5vw, 1.2rem);
+      color: var(--subtext);
+      max-width: 600px;
+      margin-bottom: 36px;
+    }
+    .hero-tagline strong {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .hero-cta {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 28px;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 28px;
+      background: var(--blue);
+      color: var(--bg);
+      font-weight: 700;
+      font-size: 0.95rem;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.2s;
+    }
+    .btn-primary:hover { opacity: 0.88; transform: translateY(-1px); text-decoration: none; }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 28px;
+      background: transparent;
+      color: var(--blue);
+      font-weight: 600;
+      font-size: 0.95rem;
+      border-radius: 10px;
+      border: 1.5px solid var(--blue);
+      cursor: pointer;
+      transition: background 0.2s, transform 0.2s;
+    }
+    .btn-secondary:hover { background: rgba(137, 180, 250, 0.1); transform: translateY(-1px); text-decoration: none; }
+
+    .hero-byline {
+      font-size: 0.82rem;
+      color: var(--overlay);
+    }
+
+    /* ─── Sections ───────────────────────────────────────────────────────── */
+    section { padding: 80px 24px; }
+
+    .section-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--blue);
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    .section-title {
+      font-size: clamp(1.5rem, 3vw, 2rem);
+      font-weight: 700;
+      color: var(--text);
+      text-align: center;
+      margin-bottom: 12px;
+    }
+
+    .section-sub {
+      text-align: center;
+      color: var(--subtext);
+      max-width: 540px;
+      margin: 0 auto 52px;
+      font-size: 0.97rem;
+    }
+
+    /* ─── Features ───────────────────────────────────────────────────────── */
+    #features { background: var(--bg); }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .feature-card {
+      background: var(--surface);
+      border: 1px solid var(--surface2);
+      border-radius: 14px;
+      padding: 28px 24px;
+      transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+      cursor: default;
+    }
+    .feature-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--blue);
+      box-shadow: 0 8px 32px rgba(137, 180, 250, 0.1);
+    }
+
+    .feature-icon {
+      font-size: 1.8rem;
+      margin-bottom: 14px;
+      display: block;
+    }
+
+    .feature-title {
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+
+    .feature-desc {
+      font-size: 0.875rem;
+      color: var(--subtext);
+      line-height: 1.65;
+    }
+
+    /* ─── Demo Section ───────────────────────────────────────────────────── */
+    #demo {
+      background: linear-gradient(180deg, var(--bg) 0%, rgba(49, 50, 68, 0.3) 50%, var(--bg) 100%);
+    }
+
+    .demo-wrapper { max-width: 1000px; margin: 0 auto; }
+
+    /* OS window mockup */
+    .os-window {
+      background: var(--surface);
+      border-radius: 12px;
+      border: 1px solid var(--surface2);
+      overflow: hidden;
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+      margin-bottom: 20px;
+    }
+
+    .os-titlebar {
+      background: rgba(30, 30, 46, 0.9);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid var(--surface2);
+    }
+
+    .os-dots {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .os-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+    .os-dot-red    { background: #ff5f57; }
+    .os-dot-yellow { background: #febc2e; }
+    .os-dot-green  { background: #28c840; }
+
+    .os-title {
+      flex: 1;
+      text-align: center;
+      font-size: 0.82rem;
+      color: var(--subtext);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-weight: 500;
+    }
+
+    /* Content area */
+    .os-content {
+      min-height: 260px;
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Skeleton lines simulating document */
+    .skeleton-lines { display: flex; flex-direction: column; gap: 10px; padding-right: 220px; }
+
+    .skeleton-line {
+      height: 12px;
+      border-radius: 6px;
+      background: var(--surface2);
+      opacity: 0.5;
+    }
+
+    /* Ghost Logger overlay widget */
+    .gl-overlay {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 200px;
+      background: #313244;
+      border-radius: 10px;
+      padding: 14px 14px 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(137,180,250,0.15);
+      user-select: none;
+    }
+
+    .gl-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .gl-label {
+      font-size: 0.7rem;
+      color: var(--overlay);
+      font-weight: 500;
+    }
+
+    .gl-menu-icon {
+      color: var(--overlay);
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    .gl-input {
+      width: 100%;
+      background: rgba(30,30,46,0.8);
+      border: 1px solid var(--surface2);
+      border-radius: 6px;
+      padding: 6px 8px;
+      color: var(--text);
+      font-size: 0.75rem;
+      font-family: 'Inter', sans-serif;
+      margin-bottom: 10px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .gl-input:focus { border-color: var(--blue); }
+    .gl-input:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    #overlay-toggle-btn {
+      width: 100%;
+      padding: 9px;
+      border: none;
+      border-radius: 7px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+    #overlay-toggle-btn.state-tracking {
+      background: var(--maroon);
+      color: #fff;
+    }
+    #overlay-toggle-btn.state-tracking:hover { background: var(--maroon-hover); }
+    #overlay-toggle-btn.state-paused {
+      background: var(--green);
+      color: var(--bg);
+    }
+    #overlay-toggle-btn.state-paused:hover { background: #8fd996; }
+    #overlay-toggle-btn:active { transform: scale(0.97); }
+
+    /* Status bar */
+    .os-statusbar {
+      background: rgba(30, 30, 46, 0.8);
+      border-top: 1px solid var(--surface2);
+      padding: 9px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      color: var(--subtext);
+    }
+
+    .status-left { display: flex; align-items: center; gap: 8px; }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      transition: background 0.3s;
+    }
+    .status-dot.tracking { background: var(--green); box-shadow: 0 0 6px rgba(166, 227, 161, 0.6); }
+    .status-dot.idle     { background: var(--yellow); box-shadow: 0 0 6px rgba(249, 226, 175, 0.6); }
+    .status-dot.paused   { background: var(--red); box-shadow: 0 0 6px rgba(243, 139, 168, 0.6); }
+
+    #status-text { transition: color 0.3s; }
+    #session-timer { font-variant-numeric: tabular-nums; color: var(--overlay); }
+
+    /* ─── Activity Log ───────────────────────────────────────────────────── */
+    .log-panel {
+      background: var(--surface);
+      border: 1px solid var(--surface2);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+
+    .log-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--surface2);
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .log-title { font-weight: 700; font-size: 0.95rem; }
+
+    .log-path {
+      font-size: 0.75rem;
+      color: var(--overlay);
+      font-family: 'Courier New', monospace;
+      flex: 1;
+    }
+
+    .log-badge {
+      background: var(--blue);
+      color: var(--bg);
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 2px 9px;
+      border-radius: 20px;
+      min-width: 24px;
+      text-align: center;
+    }
+
+    .log-table-wrap { overflow-x: auto; overflow-y: auto; max-height: 200px; }
+
+    .log-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+
+    .log-table th {
+      text-align: left;
+      padding: 10px 16px;
+      color: var(--overlay);
+      font-weight: 600;
+      font-size: 0.73rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      border-bottom: 1px solid var(--surface2);
+      background: rgba(30, 30, 46, 0.4);
+    }
+
+    .log-table td {
+      padding: 11px 16px;
+      border-bottom: 1px solid rgba(69, 71, 90, 0.4);
+      color: var(--subtext);
+      vertical-align: middle;
+    }
+
+    .log-table tr:last-child td { border-bottom: none; }
+
+    .log-table tr.log-entry { animation: slideIn 0.35s ease; }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .entry-title-cell {
+      color: var(--text);
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+    }
+
+    .idle-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 0.68rem;
+      background: rgba(249, 226, 175, 0.15);
+      color: var(--yellow);
+      border: 1px solid rgba(249, 226, 175, 0.3);
+      border-radius: 4px;
+      padding: 1px 6px;
+      white-space: nowrap;
+    }
+
+    .empty-row td {
+      text-align: center;
+      color: var(--overlay);
+      padding: 32px;
+      font-style: italic;
+    }
+
+    td.col-time { font-variant-numeric: tabular-nums; white-space: nowrap; }
+    td.col-dur  { color: var(--green); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+    @media (max-width: 640px) {
+      .col-start, .col-end { display: none; }
+      th.col-start, th.col-end { display: none; }
+    }
+
+    /* ─── Demo Controls ──────────────────────────────────────────────────── */
+    .demo-controls {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .demo-btn {
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: 1.5px solid var(--surface2);
+      background: var(--surface);
+      color: var(--subtext);
+      font-size: 0.85rem;
+      font-weight: 500;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s, color 0.2s;
+    }
+    .demo-btn:hover { background: var(--surface2); color: var(--text); border-color: var(--blue); }
+    .demo-btn.idle-active {
+      border-color: var(--yellow);
+      color: var(--yellow);
+      background: rgba(249, 226, 175, 0.08);
+    }
+    .demo-btn.idle-active:hover { background: rgba(249, 226, 175, 0.15); }
+
+    /* ─── How It Works ───────────────────────────────────────────────────── */
+    #how-it-works { background: var(--bg); }
+
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 24px;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .step-card {
+      background: var(--surface);
+      border: 1px solid var(--surface2);
+      border-radius: 14px;
+      padding: 28px 22px;
+      text-align: center;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .step-card:hover { transform: translateY(-2px); border-color: var(--surface2); }
+
+    .step-num {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      border: 2px solid var(--blue);
+      color: var(--blue);
+      font-weight: 700;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 18px;
+    }
+
+    .step-title {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--text);
+      margin-bottom: 10px;
+    }
+
+    .step-desc {
+      font-size: 0.845rem;
+      color: var(--subtext);
+      line-height: 1.65;
+    }
+
+    code {
+      background: rgba(137, 180, 250, 0.15);
+      color: var(--blue);
+      border-radius: 4px;
+      padding: 1px 5px;
+      font-size: 0.85em;
+    }
+
+    /* ─── Footer ─────────────────────────────────────────────────────────── */
+    footer {
+      border-top: 1px solid var(--surface2);
+      padding: 40px 24px;
+      text-align: center;
+      color: var(--overlay);
+      font-size: 0.85rem;
+    }
+
+    .footer-ghost { opacity: 0.4; margin: 0 auto 14px; }
+    .footer-ghost svg { width: 48px; height: auto; }
+
+    .footer-text { margin-bottom: 10px; }
+    .footer-links { display: flex; gap: 18px; justify-content: center; align-items: center; flex-wrap: wrap; }
+    .footer-links a { color: var(--overlay); transition: color 0.2s; font-size: 0.82rem; }
+    .footer-links a:hover { color: var(--blue); text-decoration: none; }
+
+    /* ─── Report Modal ───────────────────────────────────────────────────── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(10, 10, 20, 0.75);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      backdrop-filter: blur(6px);
+    }
+    .modal-overlay.open { display: flex; }
+
+    .modal-card {
+      background: var(--surface);
+      border: 1px solid var(--surface2);
+      border-radius: 16px;
+      padding: 32px;
+      max-width: 560px;
+      width: 100%;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.6);
+      animation: modalIn 0.25s ease;
+    }
+
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.95) translateY(12px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 6px;
+    }
+
+    .modal-title { font-size: 1.1rem; font-weight: 700; }
+    .modal-date  { font-size: 0.8rem; color: var(--overlay); margin-bottom: 22px; }
+
+    .modal-close {
+      background: none;
+      border: 1px solid var(--surface2);
+      color: var(--subtext);
+      border-radius: 8px;
+      padding: 4px 12px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-family: 'Inter', sans-serif;
+      transition: background 0.2s, color 0.2s;
+    }
+    .modal-close:hover { background: var(--surface2); color: var(--text); }
+
+    .report-row {
+      margin-bottom: 16px;
+    }
+
+    .report-row-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+      font-size: 0.83rem;
+    }
+
+    .report-row-title { color: var(--text); font-weight: 500; }
+    .report-row-dur   { color: var(--green); font-weight: 700; font-variant-numeric: tabular-nums; }
+
+    .report-bar-track {
+      height: 6px;
+      background: var(--surface2);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .report-bar-fill {
+      height: 100%;
+      background: var(--blue);
+      border-radius: 4px;
+      transition: width 0.6s ease;
+    }
+
+    .report-total {
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid var(--surface2);
+      display: flex;
+      justify-content: space-between;
+      font-weight: 700;
+      font-size: 0.92rem;
+    }
+
+    .report-empty {
+      text-align: center;
+      color: var(--overlay);
+      font-style: italic;
+      padding: 24px 0;
+    }
+
+    /* ─── Responsive Nav ─────────────────────────────────────────────────── */
+    @media (max-width: 680px) {
+      .nav-links { display: none; }
+      nav { padding: 0 20px; }
+      .hero-cta { flex-direction: column; align-items: center; }
+      .demo-controls { flex-direction: column; align-items: center; }
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--surface); }
+    ::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--overlay); }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════
+     NAV
+══════════════════════════════════════════════ -->
+<nav>
+  <a href="#hero" class="nav-brand">
+    <svg viewBox="0 0 64 72" fill="none" xmlns="http://www.w3.org/2000/svg" class="ghost-svg">
+      <path d="M8,28 A24,22 0 0 1 56,28 L56,52 Q50,64 44,52 Q38,64 32,52 Q26,64 20,52 Q14,64 8,52 Z" fill="rgba(100,160,255,0.9)"/>
+      <ellipse cx="24" cy="26" rx="6" ry="7" fill="white"/>
+      <ellipse cx="40" cy="26" rx="6" ry="7" fill="white"/>
+      <ellipse cx="24" cy="27" rx="3" ry="4" fill="#141428"/>
+      <ellipse cx="40" cy="27" rx="3" ry="4" fill="#141428"/>
+    </svg>
+    Ghost Logger
+  </a>
+
+  <ul class="nav-links">
+    <li><a href="#features">Features</a></li>
+    <li><a href="#demo">Live Demo</a></li>
+    <li><a href="#how-it-works">How It Works</a></li>
+  </ul>
+
+  <div class="nav-right">
+    <a href="https://github.com" target="_blank" rel="noopener" class="btn-github">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 21.795 24 17.295 24 12c0-6.63-5.37-12-12-12z"/>
+      </svg>
+      GitHub
+    </a>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════════════
+     HERO
+══════════════════════════════════════════════ -->
+<section id="hero">
+  <div class="hero-ghost-wrap">
+    <svg viewBox="0 0 64 72" fill="none" xmlns="http://www.w3.org/2000/svg" class="ghost-svg">
+      <path d="M8,28 A24,22 0 0 1 56,28 L56,52 Q50,64 44,52 Q38,64 32,52 Q26,64 20,52 Q14,64 8,52 Z" fill="rgba(100,160,255,0.9)"/>
+      <ellipse cx="24" cy="26" rx="6" ry="7" fill="white"/>
+      <ellipse cx="40" cy="26" rx="6" ry="7" fill="white"/>
+      <g class="hero-eyeblink">
+        <ellipse cx="24" cy="27" rx="3" ry="4" fill="#141428"/>
+        <ellipse cx="40" cy="27" rx="3" ry="4" fill="#141428"/>
+      </g>
+    </svg>
+  </div>
+
+  <h1>Ghost Logger</h1>
+
+  <p class="hero-tagline">
+    A <strong>silent, automatic time tracker</strong> for legal professionals.
+    Sits in your system tray. Logs every window. Charges every minute.
+  </p>
+
+  <div class="hero-cta">
+    <a href="#demo" class="btn-primary">▶ See It in Action</a>
+    <a href="https://github.com" target="_blank" rel="noopener" class="btn-secondary">⬇ Download Free (Python)</a>
+  </div>
+
+  <p class="hero-byline">Built by Tan Sze Yao &nbsp;·&nbsp; Open source &nbsp;·&nbsp; Windows / macOS / Linux</p>
+</section>
+
+<!-- ══════════════════════════════════════════════
+     FEATURES
+══════════════════════════════════════════════ -->
+<section id="features">
+  <p class="section-label">Why Ghost Logger</p>
+  <h2 class="section-title">Everything you need. Nothing you don't.</h2>
+  <p class="section-sub">Designed for legal professionals who bill by the hour but hate time-entry interruptions. Also useful for personal productivity ninjas who enjoy tracking <em>everything</em>.</p>
+
+  <div class="features-grid">
+    <div class="feature-card">
+      <span class="feature-icon">👻</span>
+      <div class="feature-title">Completely Silent</div>
+      <p class="feature-desc">No pop-ups, no interruptions. Hides in the system tray and logs time without getting in the way.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">🪟</span>
+      <div class="feature-title">Automatic Window Detection</div>
+      <p class="feature-desc">Detects the active window every 60 seconds — documents, emails, research, calls — and logs automatically.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">💤</span>
+      <div class="feature-title">Automatic Idle Detection</div>
+      <p class="feature-desc">Step away and forget to pause? No problem. If there's no keyboard or mouse input for 2+ minutes, Ghost Logger automatically flags the entry as <em>(Idle)</em> — so idle time never sneaks into your billable hours.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">⏸</span>
+      <div class="feature-title">Manual Pause as a Safety Net</div>
+      <p class="feature-desc">For more accurate logs, the floating overlay lets you pause tracking and note a reason — great for calls, breaks, or off-screen work. Idle detection is the safeguard; pause is the precision tool.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">📊</span>
+      <div class="feature-title">Daily Activity Report</div>
+      <p class="feature-desc">One click shows a breakdown of time per window with total tracked time for the day.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">📄</span>
+      <div class="feature-title">Plain CSV Log</div>
+      <p class="feature-desc">All data saved locally. No cloud, no subscription. Open in Excel anytime for billing or review.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════
+     LIVE DEMO
+══════════════════════════════════════════════ -->
+<section id="demo">
+  <p class="section-label">Interactive Demo</p>
+  <h2 class="section-title">Watch it work in real time.</h2>
+  <p class="section-sub">Ghost Logger switches windows every 5 seconds here. In production it polls every 60 seconds.</p>
+
+  <div class="demo-wrapper">
+
+    <!-- OS Window Mockup -->
+    <div class="os-window">
+      <!-- Title Bar -->
+      <div class="os-titlebar">
+        <div class="os-dots">
+          <div class="os-dot os-dot-red"></div>
+          <div class="os-dot os-dot-yellow"></div>
+          <div class="os-dot os-dot-green"></div>
+        </div>
+        <div class="os-title" id="active-window-display">Starting…</div>
+      </div>
+
+      <!-- Content Area -->
+      <div class="os-content">
+        <!-- Skeleton document lines -->
+        <div class="skeleton-lines">
+          <div class="skeleton-line" style="width:72%"></div>
+          <div class="skeleton-line" style="width:90%"></div>
+          <div class="skeleton-line" style="width:55%"></div>
+          <div class="skeleton-line" style="width:83%"></div>
+          <div class="skeleton-line" style="width:40%"></div>
+          <div class="skeleton-line" style="width:78%"></div>
+          <div class="skeleton-line" style="width:62%"></div>
+          <div class="skeleton-line" style="width:88%"></div>
+          <div class="skeleton-line" style="width:34%"></div>
+          <div class="skeleton-line" style="width:75%"></div>
+          <div class="skeleton-line" style="width:50%"></div>
+        </div>
+
+        <!-- Ghost Logger Overlay Widget -->
+        <div class="gl-overlay">
+          <div class="gl-header">
+            <span class="gl-label">Pause reason:</span>
+            <span class="gl-menu-icon">⋮</span>
+          </div>
+          <input type="text" class="gl-input" id="gl-reason-input" placeholder="Reason (optional)" maxlength="40" />
+          <button id="overlay-toggle-btn" class="state-tracking" onclick="demoTogglePause()">⏸&nbsp; Pause Tracking</button>
+        </div>
+      </div>
+
+      <!-- Status Bar -->
+      <div class="os-statusbar">
+        <div class="status-left">
+          <div class="status-dot tracking" id="status-dot"></div>
+          <span id="status-text">Ghost Logger is tracking…</span>
+        </div>
+        <span id="session-timer">0s in session</span>
+      </div>
+    </div>
+
+    <!-- Activity Log Panel -->
+    <div class="log-panel">
+      <div class="log-header">
+        <span class="log-title">📋 Activity Log</span>
+        <span class="log-path">~/ghost_logger/logs/activity_2026-03-25.csv</span>
+        <span class="log-badge" id="log-badge">0</span>
+      </div>
+      <div class="log-table-wrap">
+        <table class="log-table">
+          <thead>
+            <tr>
+              <th>Window / Document</th>
+              <th class="col-start col-time">Start</th>
+              <th class="col-end col-time">End</th>
+              <th class="col-time">Duration</th>
+            </tr>
+          </thead>
+          <tbody id="log-tbody">
+            <tr class="empty-row" id="empty-row">
+              <td colspan="4">Waiting for first window change…</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Demo Controls -->
+    <div class="demo-controls">
+      <button class="demo-btn" id="idle-btn" onclick="demoToggleIdle()">💤 Simulate Idle (2 min away)</button>
+      <button class="demo-btn" onclick="demoViewReport()">📊 View Today's Report</button>
+      <button class="demo-btn" onclick="demoReset()">🔄 Reset Demo</button>
+    </div>
+
+  </div><!-- /demo-wrapper -->
+</section>
+
+<!-- ══════════════════════════════════════════════
+     HOW IT WORKS
+══════════════════════════════════════════════ -->
+<section id="how-it-works">
+  <p class="section-label">Getting Started</p>
+  <h2 class="section-title">Up and running in 30 seconds.</h2>
+  <p class="section-sub">No configuration needed. Just install Python, run setup, and Ghost Logger disappears into your tray.</p>
+
+  <div class="steps-grid">
+    <div class="step-card">
+      <div class="step-num">1</div>
+      <div class="step-title">Install &amp; Launch</div>
+      <p class="step-desc">Run <code>setup.bat</code> once. Double-click <code>run_ghost.vbs</code>. A ghost appears in your system tray.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-num">2</div>
+      <div class="step-title">Work Normally</div>
+      <p class="step-desc">Ghost Logger polls your active window every 60 seconds. Every minute is captured automatically.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-num">3</div>
+      <div class="step-title">Step Away Freely</div>
+      <p class="step-desc">No need to pause. Idle for 2+ minutes? The entry is flagged <em>(Idle)</em> automatically.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-num">4</div>
+      <div class="step-title">Review &amp; Export</div>
+      <p class="step-desc">Click the tray icon → "View Today's Report". Raw data is in a local CSV ready for Excel.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════
+     FOOTER
+══════════════════════════════════════════════ -->
+<footer>
+  <div class="footer-ghost">
+    <svg viewBox="0 0 64 72" fill="none" xmlns="http://www.w3.org/2000/svg" class="ghost-svg">
+      <path d="M8,28 A24,22 0 0 1 56,28 L56,52 Q50,64 44,52 Q38,64 32,52 Q26,64 20,52 Q14,64 8,52 Z" fill="rgba(100,160,255,0.9)"/>
+      <ellipse cx="24" cy="26" rx="6" ry="7" fill="white"/>
+      <ellipse cx="40" cy="26" rx="6" ry="7" fill="white"/>
+      <ellipse cx="24" cy="27" rx="3" ry="4" fill="#141428"/>
+      <ellipse cx="40" cy="27" rx="3" ry="4" fill="#141428"/>
+    </svg>
+  </div>
+  <p class="footer-text">Ghost Logger &nbsp;·&nbsp; Built by Tan Sze Yao</p>
+  <div class="footer-links">
+    <a href="https://github.com" target="_blank" rel="noopener">GitHub</a>
+    <span>·</span>
+    <span>Free &amp; open source &nbsp;·&nbsp; MIT License</span>
+  </div>
+</footer>
+
+<!-- ══════════════════════════════════════════════
+     REPORT MODAL
+══════════════════════════════════════════════ -->
+<div class="modal-overlay" id="report-modal" onclick="closeReportOnOverlay(event)">
+  <div class="modal-card" id="report-card">
+    <div class="modal-header">
+      <span class="modal-title">📊 Ghost Activity Report</span>
+      <button class="modal-close" onclick="closeReport()">✕ Close</button>
+    </div>
+    <div class="modal-date" id="report-date"></div>
+    <div id="report-body"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════════════ -->
+<script>
+  // ─── Constants & State ──────────────────────────────────────────────────
+  const FAKE_WINDOWS = [
+    "Contract_NDA_Acme_Corp_2025.docx",
+    "Gmail – Re: Settlement Offer",
+    "Zoom – Client Strategy Call",
+    "LexisNexis – Force Majeure Case Law",
+    "Billable_Hours_Q4_2025.xlsx",
+    "Case_Notes_Smith_v_Jones.docx",
+    "Microsoft Teams – Legal Team",
+    "Chrome – Court Filing Portal",
+    "Outlook – Draft: Engagement Letter",
+    "Expert_Witness_Report_Final.pdf",
+  ];
+
+  const TICK_MS        = 5000;
+  const TIMER_TICK_MS  = 1000;
+
+  let entries       = [];
+  let windowIndex   = 0;
+  let sessionStart  = null;  // Date
+  let isPaused      = false;
+  let isIdleMode    = false;
+  let tickTimer     = null;
+  let sessionTimer  = null;
+
+  // ─── Helpers ─────────────────────────────────────────────────────────────
+  function now()  { return new Date(); }
+  function fmtTime(d) {
+    return d.toTimeString().slice(0, 8); // HH:MM:SS
+  }
+
+  function fmtDuration(ms) {
+    const s = Math.floor(ms / 1000);
+    if (s < 60)           return s + 's';
+    const m = Math.floor(s / 60), rs = s % 60;
+    if (m < 60)           return m + 'm ' + rs + 's';
+    const h = Math.floor(m / 60), rm = m % 60;
+    return h + 'h ' + rm + 'm';
+  }
+
+  function currentWindow() {
+    return FAKE_WINDOWS[windowIndex % FAKE_WINDOWS.length];
+  }
+
+  // ─── DOM refs ────────────────────────────────────────────────────────────
+  const activeWindowDisplay = document.getElementById('active-window-display');
+  const statusDot           = document.getElementById('status-dot');
+  const statusText          = document.getElementById('status-text');
+  const sessionTimerEl      = document.getElementById('session-timer');
+  const logTbody            = document.getElementById('log-tbody');
+  const logBadge            = document.getElementById('log-badge');
+  const emptyRow            = document.getElementById('empty-row');
+  const overlayToggleBtn    = document.getElementById('overlay-toggle-btn');
+  const glReasonInput       = document.getElementById('gl-reason-input');
+  const idleBtn             = document.getElementById('idle-btn');
+
+  // ─── Logging ─────────────────────────────────────────────────────────────
+  function logEntry(title, start, end, idle) {
+    const dur = end - start;
+    if (dur < 500) return; // skip sub-half-second entries
+
+    const entry = {
+      title: idle ? title + ' (Idle)' : title,
+      displayTitle: title,
+      isIdle: idle,
+      start: fmtTime(start),
+      end:   fmtTime(end),
+      dur:   dur,
+      durFmt: fmtDuration(dur),
+    };
+    entries.unshift(entry);
+    renderLogRow(entry, true);
+    updateBadge();
+  }
+
+  function renderLogRow(entry, animate) {
+    // Remove empty row if present
+    if (emptyRow && emptyRow.parentNode) emptyRow.parentNode.removeChild(emptyRow);
+
+    const tr = document.createElement('tr');
+    if (animate) tr.classList.add('log-entry');
+
+    const titleCell = document.createElement('td');
+    const titleSpan = document.createElement('span');
+    titleSpan.className = 'entry-title-cell';
+    titleSpan.textContent = entry.displayTitle;
+    if (entry.isIdle) {
+      const badge = document.createElement('span');
+      badge.className = 'idle-badge';
+      badge.textContent = '💤 Idle';
+      titleSpan.appendChild(badge);
+    }
+    titleCell.appendChild(titleSpan);
+
+    const startCell = document.createElement('td');
+    startCell.className = 'col-start col-time';
+    startCell.textContent = entry.start;
+
+    const endCell = document.createElement('td');
+    endCell.className = 'col-end col-time';
+    endCell.textContent = entry.end;
+
+    const durCell = document.createElement('td');
+    durCell.className = 'col-dur col-time';
+    durCell.textContent = entry.durFmt;
+
+    tr.appendChild(titleCell);
+    tr.appendChild(startCell);
+    tr.appendChild(endCell);
+    tr.appendChild(durCell);
+
+    logTbody.insertBefore(tr, logTbody.firstChild);
+  }
+
+  function updateBadge() {
+    logBadge.textContent = entries.length;
+  }
+
+  // ─── Session Timer ────────────────────────────────────────────────────────
+  function startSessionTimer() {
+    stopSessionTimer();
+    sessionTimer = setInterval(() => {
+      if (!sessionStart || isPaused) return;
+      const elapsed = now() - sessionStart;
+      sessionTimerEl.textContent = fmtDuration(elapsed) + ' in session';
+    }, TIMER_TICK_MS);
+  }
+
+  function stopSessionTimer() {
+    if (sessionTimer) { clearInterval(sessionTimer); sessionTimer = null; }
+  }
+
+  // ─── Tick (window advance) ────────────────────────────────────────────────
+  function doTick() {
+    if (isPaused) return;
+
+    const prevWindow = currentWindow();
+    const prevStart  = sessionStart;
+    const prevIdle   = isIdleMode;
+    const tickEnd    = now();
+
+    logEntry(prevWindow, prevStart, tickEnd, prevIdle);
+
+    windowIndex++;
+    sessionStart = tickEnd;
+
+    updateDisplay();
+  }
+
+  function startTicking() {
+    stopTicking();
+    tickTimer = setInterval(doTick, TICK_MS);
+  }
+
+  function stopTicking() {
+    if (tickTimer) { clearInterval(tickTimer); tickTimer = null; }
+  }
+
+  // ─── Display Update ───────────────────────────────────────────────────────
+  function updateDisplay() {
+    if (isPaused) {
+      activeWindowDisplay.textContent = '— Paused —';
+      setStatus('paused', '⏸ Tracking paused');
+    } else if (isIdleMode) {
+      activeWindowDisplay.textContent = currentWindow() + ' (Idle)';
+      setStatus('idle', '💤 Ghost Logger detected idle…');
+    } else {
+      activeWindowDisplay.textContent = currentWindow();
+      setStatus('tracking', 'Ghost Logger is tracking…');
+    }
+  }
+
+  function setStatus(state, text) {
+    statusDot.className = 'status-dot ' + state;
+    statusText.textContent = text;
+  }
+
+  // ─── Pause / Resume ───────────────────────────────────────────────────────
+  function demoTogglePause() {
+    if (!isPaused) {
+      // Pause: log current session up to now
+      const endNow = now();
+      logEntry(currentWindow(), sessionStart, endNow, isIdleMode);
+      sessionStart = null;
+      isPaused = true;
+      stopTicking();
+
+      overlayToggleBtn.textContent = '▶\u00a0 Resume Tracking';
+      overlayToggleBtn.className = 'state-paused';
+      glReasonInput.value = glReasonInput.value || 'Away from desk';
+      glReasonInput.disabled = true;
+      sessionTimerEl.textContent = '—';
+    } else {
+      // Resume
+      isPaused = false;
+      sessionStart = now();
+      startTicking();
+      startSessionTimer();
+
+      overlayToggleBtn.textContent = '⏸\u00a0 Pause Tracking';
+      overlayToggleBtn.className = 'state-tracking';
+      glReasonInput.value = '';
+      glReasonInput.disabled = false;
+    }
+    updateDisplay();
+  }
+
+  // ─── Idle Toggle ──────────────────────────────────────────────────────────
+  function demoToggleIdle() {
+    if (isPaused) return; // can't idle while paused
+
+    if (!isIdleMode) {
+      // Activate idle: log current active session
+      const endNow = now();
+      logEntry(currentWindow(), sessionStart, endNow, false);
+      sessionStart = now();
+      isIdleMode = true;
+
+      idleBtn.textContent = '▶ Return from Idle';
+      idleBtn.classList.add('idle-active');
+    } else {
+      // Deactivate idle: log idle session, start fresh
+      const endNow = now();
+      logEntry(currentWindow(), sessionStart, endNow, true);
+      sessionStart = now();
+      isIdleMode = false;
+
+      idleBtn.textContent = '💤 Simulate Idle (2 min away)';
+      idleBtn.classList.remove('idle-active');
+    }
+    updateDisplay();
+  }
+
+  // ─── Report ───────────────────────────────────────────────────────────────
+  function demoViewReport() {
+    const modal = document.getElementById('report-modal');
+    const body  = document.getElementById('report-body');
+    const dateEl = document.getElementById('report-date');
+
+    dateEl.textContent = new Date().toLocaleDateString('en-SG', {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    });
+
+    // Aggregate by display title (strip idle suffix)
+    const agg = {};
+    entries.forEach(e => {
+      const key = e.displayTitle;
+      agg[key] = (agg[key] || 0) + e.dur;
+    });
+
+    const sorted = Object.entries(agg).sort((a, b) => b[1] - a[1]);
+    const maxDur = sorted.length ? sorted[0][1] : 1;
+    const total  = sorted.reduce((s, [, d]) => s + d, 0);
+
+    if (sorted.length === 0) {
+      body.innerHTML = '<p class="report-empty">No entries yet. Let the demo run first!</p>';
+    } else {
+      let html = '';
+      sorted.forEach(([title, dur]) => {
+        const pct = Math.round((dur / maxDur) * 100);
+        html += `
+          <div class="report-row">
+            <div class="report-row-header">
+              <span class="report-row-title">${escapeHtml(title)}</span>
+              <span class="report-row-dur">${fmtDuration(dur)}</span>
+            </div>
+            <div class="report-bar-track">
+              <div class="report-bar-fill" style="width:${pct}%"></div>
+            </div>
+          </div>`;
+      });
+      html += `
+        <div class="report-total">
+          <span>Total Tracked</span>
+          <span style="color:var(--green)">${fmtDuration(total)}</span>
+        </div>`;
+      body.innerHTML = html;
+    }
+
+    modal.classList.add('open');
+  }
+
+  function closeReport() {
+    document.getElementById('report-modal').classList.remove('open');
+  }
+
+  function closeReportOnOverlay(e) {
+    if (e.target.id === 'report-modal') closeReport();
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // ─── Reset ────────────────────────────────────────────────────────────────
+  function demoReset() {
+    stopTicking();
+    stopSessionTimer();
+
+    entries      = [];
+    windowIndex  = 0;
+    isPaused     = false;
+    isIdleMode   = false;
+    sessionStart = null;
+
+    // Clear table
+    logTbody.innerHTML = '';
+    const emptyTr = document.createElement('tr');
+    emptyTr.className = 'empty-row';
+    emptyTr.id = 'empty-row';
+    emptyTr.innerHTML = '<td colspan="4">Waiting for first window change…</td>';
+    logTbody.appendChild(emptyTr);
+
+    updateBadge();
+
+    overlayToggleBtn.textContent = '⏸\u00a0 Pause Tracking';
+    overlayToggleBtn.className = 'state-tracking';
+    glReasonInput.value = '';
+    glReasonInput.disabled = false;
+
+    idleBtn.textContent = '💤 Simulate Idle (2 min away)';
+    idleBtn.classList.remove('idle-active');
+
+    sessionTimerEl.textContent = '0s in session';
+
+    // Re-init
+    initDemo();
+  }
+
+  // ─── Init ─────────────────────────────────────────────────────────────────
+  function initDemo() {
+    sessionStart = now();
+    updateDisplay();
+    startTicking();
+    startSessionTimer();
+  }
+
+  // Kick off
+  initDemo();
+</script>
+</body>
+</html>
